@@ -1,0 +1,16 @@
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+sqlalchemy==2.0.36
+psycopg2-binary==2.9.10
+alembic==1.14.0
+pydantic==2.10.4
+pydantic-settings==2.7.0
+PyJWT>=2.8,<3.0
+passlib[bcrypt]==1.7.4
+bcrypt==4.0.1
+python-multipart==0.0.20
+langgraph==1.2.11
+langchain-openai>=1.0,<2.0
+openai>=1.58,<2.0
+httpx==0.28.1
+tenacity==9.0.0

@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>制单工作台 · 电商仓储制单自动化</title>
+<link rel="stylesheet" href="https://miaoda.feishu.cn/fonts/css2?family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { width:100%; min-width:1180px; height:100%; }
+  body { font-family:'Noto Sans SC','PingFang SC','Microsoft YaHei',system-ui,sans-serif; background:#0a0f1c; color:#e8ecf4; overflow:hidden; position:relative; }
+  .bg-layer { position:fixed; inset:0; z-index:0; background:linear-gradient(180deg, rgba(6,10,22,0.55) 0%, rgba(8,13,28,0.78) 100%), url('https://aka.doubaocdn.com/s/YHVYUII0Vg') center/cover no-repeat; }
+  .bg-veil { position:fixed; inset:0; z-index:1; background:radial-gradient(ellipse at 30% 20%, rgba(64,100,190,0.10), transparent 60%); }
+  .app { position:relative; z-index:2; display:flex; height:100vh; }
+  .icon-rail { width:72px; height:100%; display:flex; flex-direction:column; align-items:center; padding:22px 0 18px; background:rgba(10,16,30,0.55); backdrop-filter:blur(14px); border-right:1px solid rgba(255,255,255,0.07); }
+  .rail-logo { width:42px; height:42px; border-radius:12px; background:linear-gradient(135deg,#4f7cf0,#7cc0ff); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:17px; color:#fff; box-shadow:0 4px 18px rgba(90,140,255,0.35); margin-bottom:26px; }
+  .rail-item { width:48px; height:48px; border-radius:12px; display:flex; align-items:center; justify-content:center; margin-bottom:8px; cursor:pointer; position:relative; color:#9aa7c0; transition:all .18s; }
+  .rail-item svg { width:23px; height:23px; }
+  .rail-item:hover { background:rgba(255,255,255,0.08); color:#dbe4f5; }
+  .rail-item.active { background:rgba(96,140,255,0.18); color:#8fb7ff; }
+  .rail-item.active::before { content:''; position:absolute; left:-12px; top:12px; bottom:12px; width:3px; background:#7ea6ff; border-radius:3px; }
+  .rail-spacer { flex:1; }
+  .main { flex:1; display:flex; flex-direction:column; min-width:0; }
+  .topbar { height:64px; display:flex; align-items:center; justify-content:space-between; padding:0 28px; background:rgba(10,16,30,0.35); backdrop-filter:blur(10px); border-bottom:1px solid rgba(255,255,255,0.06); }
+  .topbar-left { display:flex; align-items:center; gap:12px; }
+  .topbar-left .title { font-size:16px; font-weight:600; letter-spacing:.5px; }
+  .topbar-left .sub { font-size:12px; color:#8ea0bf; margin-left:4px; }
+  .topbar-right { display:flex; align-items:center; gap:8px; }
+  .tb-icon { width:38px; height:38px; border-radius:10px; display:flex; align-items:center; justify-content:center; color:#a7b4ce; cursor:pointer; transition:all .15s; }
+  .tb-icon:hover { background:rgba(255,255,255,0.08); color:#fff; }
+  .tb-icon svg { width:19px; height:19px; }
+  .avatar { width:36px; height:36px; border-radius:50%; margin-left:6px; background:linear-gradient(135deg,#5b8bf7,#8fd0ff); display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:600; color:#fff; cursor:pointer; }
+  .content { flex:1; overflow-y:auto; padding:28px 34px 40px; scrollbar-width:thin; scrollbar-color:rgba(255,255,255,0.15) transparent; }
+  .page { display:none; animation:fadeIn .3s ease; }
+  .page.active { display:block; }
+  @keyframes fadeIn { from {opacity:0; transform:translateY(8px);} to {opacity:1; transform:none;} }
+  .glass { background:rgba(16,24,42,0.55); backdrop-filter:blur(16px); border:1px solid rgba(255,255,255,0.10); border-radius:18px; box-shadow:0 10px 34px rgba(0,0,0,0.28); }
+  .page-head { display:flex; align-items:flex-end; justify-content:space-between; margin-bottom:22px; }
+  .page-head h2 { font-size:22px; font-weight:600; }
+  .page-head p { font-size:13px; color:#8ea0bf; margin-top:6px; }
+  .stat-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:16px; margin-bottom:24px; }
+  .stat-card { padding:20px 22px; }
+  .stat-card .label { font-size:13px; color:#9aaac8; }
+  .stat-card .num { font-size:30px; font-weight:700; margin-top:10px; letter-spacing:.5px; }
+  .stat-card .num small { font-size:14px; font-weight:400; color:#7f90b0; margin-left:4px; }
+  .stat-card .trend { font-size:12px; margin-top:8px; color:#7fbf9f; }
+  .stat-card.accent .num { color:#8fb7ff; }
+  .stat-card.warn .num { color:#f5c66b; }
+  .cols { display:grid; grid-template-columns:1.4fr 1fr; gap:18px; align-items:start; }
+  @media (max-width:1500px){ .cols { grid-template-columns: 1fr; } }
+  .panel { padding:22px 24px; }
+  .panel-title { font-size:15px; font-weight:600; margin-bottom:16px; display:flex; align-items:center; gap:8px; }
+  .panel-title .dot { width:8px; height:8px; border-radius:50%; background:#7ea6ff; }
+  .doc-row { display:flex; align-items:center; gap:14px; padding:13px 6px; border-bottom:1px solid rgba(255,255,255,0.06); transition:background .15s; border-radius:10px; }
+  .doc-row:hover { background:rgba(255,255,255,0.05); }
+  .doc-row:last-child { border-bottom:none; }
+  .doc-icon { width:38px; height:38px; border-radius:10px; flex:none; display:flex; align-items:center; justify-content:center; background:rgba(126,166,255,0.16); color:#8fb7ff; }
+  .doc-icon svg { width:19px; height:19px; }
+  .doc-info { flex:1; min-width:0; }
+  .doc-info .t { font-size:13.5px; font-weight:500; }
+  .doc-info .s { font-size:12px; color:#7f90b0; margin-top:3px; }
+  .doc-status { font-size:12px; padding:4px 10px; border-radius:20px; flex:none; font-weight:500; }
+  .st-pending_audit { background:rgba(245,198,107,0.15); color:#f5c66b; }
+  .st-audited { background:rgba(127,191,159,0.15); color:#7fbf9f; }
+  .st-returned { background:rgba(240,130,130,0.15); color:#f08282; }
+  .quick-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(150px,1fr)); gap:12px; }
+  .quick { padding:18px 16px; border-radius:14px; cursor:pointer; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.07); transition:all .18s; }
+  .quick:hover { background:rgba(126,166,255,0.12); border-color:rgba(126,166,255,0.35); transform:translateY(-2px); }
+  .quick.mode-card.selected { background:rgba(126,166,255,0.18); border-color:#7ea6ff; box-shadow:inset 0 0 0 1px #7ea6ff; }
+  .upload-preview img { max-height:230px; border-radius:12px; border:1px solid rgba(143,183,255,0.35); display:block; }
+  .purchase-layout { display:grid; grid-template-columns:1.4fr .85fr; gap:18px; align-items:start; }
+  @media (max-width:1400px){ .purchase-layout { grid-template-columns:1fr; } .p-right{order:2;} }
+  .mode-switch { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .mode-card { padding:14px 16px; }
+  .mode-card svg { width:20px; height:20px; }
+  .mode-card .n { margin-top:8px; }
+  .mode-card .d { font-size:11.5px; }
+  .mini-stat { display:flex; gap:10px; }
+  .mini-stat>div { flex:1; text-align:center; padding:12px 6px; border-radius:12px; background:rgba(255,255,255,0.04); }
+  .mini-stat .n { font-size:22px; font-weight:700; color:#8fb7ff; }
+  .mini-stat .l { font-size:12px; color:#8ea0bf; margin-top:4px; }
+  .step-line { display:flex; align-items:center; gap:10px; font-size:13px; color:#c6d0e2; padding:9px 0; border-bottom:1px solid rgba(255,255,255,0.05); }
+  .step-line:last-child { border-bottom:none; }
+  .step-line b { width:22px; height:22px; flex:none; border-radius:50%; background:rgba(126,166,255,0.18); color:#8fb7ff; display:flex; align-items:center; justify-content:center; font-size:12px; }
+  .quick svg { width:24px; height:24px; color:#8fb7ff; }
+  .quick .n { font-size:14px; font-weight:600; margin-top:12px; }
+  .quick .d { font-size:12px; color:#7f90b0; margin-top:4px; line-height:1.5; }
+  .form-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:14px; margin-bottom:18px; }
+  .field label { display:block; font-size:12px; color:#8ea0bf; margin-bottom:6px; }
+  .field input, .field select { width:100%; padding:11px 13px; border-radius:10px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); color:#eef2fb; font-size:13.5px; font-family:inherit; outline:none; transition:border .15s; }
+  .field input:focus, .field select:focus { border-color:#7ea6ff; background:rgba(126,166,255,0.08); }
+  .field select option { background:#141c30; color:#eef2fb; }
+  .upload-zone { border:1.5px dashed rgba(143,183,255,0.4); border-radius:16px; padding:44px 20px; text-align:center; cursor:pointer; background:rgba(126,166,255,0.05); transition:all .2s; }
+  .upload-zone:hover { background:rgba(126,166,255,0.10); border-color:#8fb7ff; }
+  .upload-zone svg { width:40px; height:40px; color:#8fb7ff; }
+  .upload-zone .t { font-size:15px; font-weight:500; margin-top:12px; }
+  .upload-zone .d { font-size:12px; color:#7f90b0; margin-top:6px; }
+  .tbl { width:100%; border-collapse:collapse; margin-top:6px; }
+  .tbl th { font-size:12px; color:#8ea0bf; text-align:left; padding:10px; border-bottom:1px solid rgba(255,255,255,0.10); font-weight:500; }
+  .tbl td { font-size:13.5px; padding:8px 10px; border-bottom:1px solid rgba(255,255,255,0.05); }
+  .tbl tr:last-child td { border-bottom:none; }
+  .tbl input, .tbl select { width:100%; padding:8px 10px; border-radius:8px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); color:#eef2fb; font-size:13px; font-family:inherit; outline:none; }
+  .tbl select option { background:#141c30; }
+  .btn-row { display:flex; gap:12px; margin-top:20px; flex-wrap:wrap; }
+  .btn { padding:11px 22px; border-radius:11px; border:none; cursor:pointer; font-size:14px; font-weight:600; font-family:inherit; transition:all .18s; }
+  .btn-primary { background:linear-gradient(135deg,#4f7cf0,#6fa9ff); color:#fff; box-shadow:0 6px 20px rgba(90,140,255,0.35); }
+  .btn-primary:hover { filter:brightness(1.08); transform:translateY(-1px); }
+  .btn-ghost { background:rgba(255,255,255,0.08); color:#dbe4f5; border:1px solid rgba(255,255,255,0.14); }
+  .btn-ghost:hover { background:rgba(255,255,255,0.14); }
+  .btn-sm { padding:6px 13px; font-size:12px; border-radius:8px; }
+  .btn-danger { background:rgba(240,130,130,0.14); color:#f08282; border:1px solid rgba(240,130,130,0.3); }
+  .btn-danger:hover { background:rgba(240,130,130,0.22); }
+  .hint { font-size:12px; color:#7f90b0; margin-top:10px; line-height:1.7; }
+  .ocr-result { margin-top:18px; padding-top:18px; border-top:1px solid rgba(255,255,255,0.09); }
+  .ocr-summary { display:flex; align-items:center; gap:10px; margin-bottom:14px; color:#aab8d2; font-size:12px; }
+  .confidence { padding:3px 8px; border-radius:8px; background:rgba(127,191,159,.14); color:#7fbf9f; }
+  .confidence.low { background:rgba(245,198,107,.14); color:#f5c66b; }
+  .ocr-row.low-confidence { background:rgba(245,198,107,.055); }
+  .ocr-row.low-confidence select, .ocr-row.low-confidence input { border-color:rgba(245,198,107,.65); }
+  .field.low-confidence select { border-color:rgba(245,198,107,.65); background:rgba(245,198,107,.055); }
+  .raw-note { max-width:190px; margin-top:4px; color:#f5c66b; font-size:11px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .tag { display:inline-block; font-size:11.5px; padding:3px 9px; border-radius:8px; margin-right:6px; background:rgba(143,183,255,0.14); color:#8fb7ff; }
+  .tag.green { background:rgba(127,191,159,0.14); color:#7fbf9f; }
+  .toast { position:fixed; bottom:28px; left:50%; transform:translateX(-50%) translateY(20px); background:rgba(20,30,52,0.95); border:1px solid rgba(143,183,255,0.35); color:#eef2fb; padding:13px 22px; border-radius:12px; font-size:14px; box-shadow:0 12px 40px rgba(0,0,0,0.4); opacity:0; pointer-events:none; transition:all .25s; z-index:50; }
+  .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+  .set-row { display:flex; align-items:center; justify-content:space-between; padding:16px 4px; border-bottom:1px solid rgba(255,255,255,0.07); }
+  .set-row:last-child { border-bottom:none; }
+  .set-row .t { font-size:14px; font-weight:500; }
+  .set-row .d { font-size:12px; color:#7f90b0; margin-top:4px; }
+  .switch { width:46px; height:26px; border-radius:20px; background:rgba(255,255,255,0.16); position:relative; cursor:pointer; transition:background .2s; flex:none; }
+  .switch::after { content:''; position:absolute; top:3px; left:3px; width:20px; height:20px; border-radius:50%; background:#fff; transition:left .2s; }
+  .switch.on { background:#5b8bf7; }
+  .switch.on::after { left:23px; }
+  /* 登录遮罩 */
+  .login-mask { position:fixed; inset:0; z-index:100; display:flex; align-items:center; justify-content:center; background:rgba(6,10,22,0.55); backdrop-filter:blur(8px); }
+  .login-card { width:380px; padding:38px 34px; }
+  .login-card .logo { width:54px; height:54px; border-radius:15px; background:linear-gradient(135deg,#4f7cf0,#7cc0ff); display:flex; align-items:center; justify-content:center; font-size:22px; font-weight:700; color:#fff; margin:0 auto 18px; box-shadow:0 8px 26px rgba(90,140,255,0.4); }
+  .login-card h3 { text-align:center; font-size:19px; font-weight:600; }
+  .login-card p { text-align:center; font-size:12.5px; color:#8ea0bf; margin:8px 0 24px; }
+  .login-card .field { margin-bottom:14px; }
+  .login-card .btn-primary { width:100%; margin-top:6px; }
+  .login-err { color:#f08282; font-size:12.5px; min-height:18px; margin-top:10px; text-align:center; }
+  .empty { text-align:center; padding:34px; color:#7f90b0; font-size:13px; }
+</style>
+</head>
+<body>
+<div class="bg-layer"></div>
+<div class="bg-veil"></div>
+
+<!-- ===== 登录遮罩 ===== -->
+<div class="login-mask" id="loginMask">
+  <div class="login-card glass">
+    <div class="logo">制</div>
+    <h3>制单自动化工作台</h3>
+    <p>电商仓储 · 采购入库 AI 制单</p>
+    <div class="field"><label>账号</label><input id="loginUser" placeholder="主账号 / 子账号" value="admin"></div>
+    <div class="field"><label>密码</label><input id="loginPass" type="password" placeholder="请输入密码" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <button class="btn btn-primary" onclick="doLogin()">登 录</button>
+    <div class="login-err" id="loginErr"></div>
+    <div class="hint" style="text-align:center;">使用您自行设置的登录密码 · 后端地址 127.0.0.1:8010</div>
+  </div>
+</div>
+
+<div class="app" id="appRoot" style="display:none;">
+  <nav class="icon-rail">
+    <div class="rail-logo">制</div>
+    <div class="rail-item active" data-page="home" title="工作台"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg></div>
+    <div class="rail-item" data-page="purchase" title="采购入库"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v12"/><path d="m6 9 6 6 6-6"/><path d="M4 20h16"/></svg></div>
+    <div class="rail-item" data-page="return" title="退货入库"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg></div>
+    <div class="rail-item" data-page="out" title="其他出库"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 21V9"/><path d="m6 15 6-6 6 6"/><path d="M4 4h16"/></svg></div>
+    <div class="rail-item" data-page="docs" title="单据列表"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 3h9l4 4v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h6"/></svg></div>
+    <div class="rail-spacer"></div>
+    <div class="rail-item" data-page="settings" title="系统设置"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.6 1.6 0 0 0-1-1.5 1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.6 1.6 0 0 0 1.5-1 1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z"/></svg></div>
+    <div class="rail-item" title="退出登录" onclick="logout()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg></div>
+  </nav>
+  <div class="main">
+    <header class="topbar">
+      <div class="topbar-left"><span class="title" id="welcomeName">制单工作台</span><span class="sub">· 采购入库自动化</span></div>
+      <div class="topbar-right">
+        <div class="tb-icon" title="新建制单" onclick="go('purchase')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></div>
+        <div class="avatar" id="avatarText">A</div>
+      </div>
+    </header>
+    <main class="content">
+      <!-- 工作台 -->
+      <section class="page active" id="page-home">
+        <div class="page-head"><div><h2>工作台</h2><p>单据流转概览（实时数据）</p></div><button class="btn btn-primary" onclick="go('purchase')">+ 新建采购入库</button></div>
+        <div class="stat-grid">
+          <div class="stat-card glass"><div class="label">待审核单据</div><div class="num" id="statPending">-</div><div class="trend">需人工确认</div></div>
+          <div class="stat-card glass accent"><div class="label">已审核单据</div><div class="num" id="statAudited">-</div><div class="trend">可同步 ERP/WMS</div></div>
+          <div class="stat-card glass warn"><div class="label">今日制单</div><div class="num" id="statToday">-</div><div class="trend">含图片识别与手动</div></div>
+          <div class="stat-card glass"><div class="label">主数据商品</div><div class="num" id="statProducts">-</div><div class="trend">供应商/商品库</div></div>
+        </div>
+        <div class="cols">
+          <div class="panel glass"><div class="panel-title"><span class="dot"></span>最近单据</div><div id="recent-docs"><div class="empty">加载中…</div></div></div>
+          <div class="panel glass">
+            <div class="panel-title"><span class="dot"></span>快捷入口</div>
+            <div class="quick-grid">
+              <div class="quick" onclick="go('purchase')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 7h18l-2 12H5z"/><path d="M9 10V7a3 3 0 0 1 6 0v3"/></svg><div class="n">采购入库</div><div class="d">拍照识别 / 手动建单</div></div>
+              <div class="quick" onclick="go('return')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg><div class="n">退货入库</div><div class="d">P1 预备</div></div>
+              <div class="quick" onclick="go('out')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 21V9"/><path d="m6 15 6-6 6 6"/><path d="M4 4h16"/></svg><div class="n">其他出库</div><div class="d">P1 预备</div></div>
+              <div class="quick" onclick="go('docs')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 3h9l4 4v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M14 3v5h5"/></svg><div class="n">全部单据</div><div class="d">状态筛选 / 审核</div></div>
+            </div>
+          </div>
+        </div>
+      </section>
+      <!-- 采购入库 -->
+      <section class="page" id="page-purchase">
+        <div class="page-head"><div><h2>采购入库</h2><p>拍照识别 / 手动选择 → 生成采购入库单 → 人工确认</p></div></div>
+        <div class="purchase-layout">
+        <div class="p-left">
+        <div class="panel glass" style="margin-bottom:18px;">
+          <div class="panel-title"><span class="dot"></span>入库方式</div>
+          <div class="mode-switch">
+            <div class="quick mode-card selected" data-mode="img" onclick="showMode('img')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10" r="1.5"/><path d="m21 15-4-4-9 9"/></svg><div class="n">上传图片入库</div><div class="d">纸质采购单拍照</div></div>
+            <div class="quick mode-card" data-mode="manual" onclick="showMode('manual')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 5v14M5 12h14"/></svg><div class="n">手动选择入库</div><div class="d">选商品 / 数量 / 供应商</div></div>
+          </div>
+        </div>
+        <!-- 图片 -->
+        <div id="mode-img" class="panel glass">
+          <div class="panel-title"><span class="dot"></span>① 上传采购单据图片</div>
+          <input type="file" id="ocrFile" accept="image/*" style="display:none;" onchange="uploadOcr(event)">
+          <div class="upload-zone" id="uploadZone" onclick="document.getElementById('ocrFile').click()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 16V4"/><path d="m6 10 6-6 6 6"/><path d="M4 20h16"/></svg>
+            <div class="t">点击选择采购单据图片</div><div class="d">支持 JPG / PNG / 拍照件 · 上传成功后进入 AI 识别队列</div>
+          </div>
+          <div id="ocr-status" class="hint" style="display:none;"></div>
+          <div id="ocr-result" class="ocr-result" style="display:none;">
+            <div class="panel-title"><span class="dot"></span>② 核对识别结果</div>
+            <div id="ocr-summary" class="ocr-summary"></div>
+            <div class="form-grid">
+              <div class="field"><label>供应商（必选）</label><select id="ocrSupplier" onchange="this.closest('.field').classList.remove('low-confidence')"></select></div>
+              <div class="field"><label>入库仓库（图片没有可手选）</label><select id="ocrWarehouse" onchange="this.closest('.field').classList.remove('low-confidence')"></select></div>
+            </div>
+            <table class="tbl">
+              <thead><tr><th style="min-width:230px;">商品</th><th style="width:140px;">SKU</th><th style="width:110px;">数量</th><th style="width:90px;">单位</th><th style="width:70px;"></th></tr></thead>
+              <tbody id="ocrRows"></tbody>
+            </table>
+            <div class="btn-row">
+              <button class="btn btn-ghost" onclick="addOcrRow()">+ 添加一行</button>
+              <button class="btn btn-primary" id="ocrSubmit" onclick="submitOcr()">核对无误，生成采购入库单</button>
+            </div>
+          </div>
+        </div>
+        <!-- 手动 -->
+        <div id="mode-manual" class="panel glass" style="display:none;">
+          <div class="panel-title"><span class="dot"></span>手动选择商品入库</div>
+          <div class="form-grid">
+            <div class="field"><label>供应商</label><select id="mSupplier"></select></div>
+            <div class="field"><label>入库仓库</label><select id="mWarehouse"></select></div>
+          </div>
+          <table class="tbl">
+            <thead><tr><th style="min-width:200px;">商品</th><th style="width:140px;">SKU</th><th style="width:110px;">数量</th><th style="width:90px;">单位</th><th style="width:70px;"></th></tr></thead>
+            <tbody id="manualRows"></tbody>
+          </table>
+          <div class="btn-row">
+            <button class="btn btn-ghost" onclick="addRow()">+ 添加一行</button>
+            <button class="btn btn-primary" onclick="submitManual()">生成采购入库单</button>
+          </div>
+        </div>
+        </div><!-- /p-left -->
+        <aside class="p-right">
+          <div class="panel glass" style="margin-bottom:18px;">
+            <div class="panel-title"><span class="dot"></span>制单看板</div>
+            <div class="mini-stat">
+              <div><div class="n" id="pbPending">-</div><div class="l">待审核</div></div>
+              <div><div class="n" id="pbAudited">-</div><div class="l">已审核</div></div>
+              <div><div class="n" id="pbToday">-</div><div class="l">今日</div></div>
+            </div>
+          </div>
+          <div class="panel glass" style="margin-bottom:18px;">
+            <div class="panel-title"><span class="dot"></span>最近采购单</div>
+            <div id="pbRecent"><div class="empty">加载中…</div></div>
+          </div>
+          <div class="panel glass">
+            <div class="panel-title"><span class="dot"></span>操作流程</div>
+            <div class="step-line"><b>1</b>上传图片 或 手动选商品</div>
+            <div class="step-line"><b>2</b>核对后生成采购入库单</div>
+            <div class="step-line"><b>3</b>到单据列表人工审核</div>
+          </div>
+        </aside>
+        </div><!-- /purchase-layout -->
+      </section>
+      <!-- 退货 -->
+      <section class="page" id="page-return">
+        <div class="page-head"><div><h2>退货入库</h2><p>P1 预备功能 · 扫描运单号 / 匹配退供应商地址 / 自动生成退货清单</p></div></div>
+        <div class="panel glass"><div class="upload-zone" onclick="toast('退货入库为 P1 模块，采购入库做透后接入')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10" r="1.5"/><path d="m21 15-4-4-9 9"/></svg><div class="t">扫描退货运单号 → 生成退货清单</div><div class="d">匹配商品名称 / SKU / 退供应商地址，供打印交接</div></div></div>
+      </section>
+      <!-- 出库 -->
+      <section class="page" id="page-out">
+        <div class="page-head"><div><h2>其他出库</h2><p>P1 预备功能 · 领用 / 报废 / 调拨出库</p></div></div>
+        <div class="panel glass"><div class="quick-grid">
+          <div class="quick" onclick="toast('出库模块规划中')"><div class="n">领用出库</div><div class="d">部门领用登记</div></div>
+          <div class="quick" onclick="toast('出库模块规划中')"><div class="n">报废出库</div><div class="d">损耗登记</div></div>
+          <div class="quick" onclick="toast('出库模块规划中')"><div class="n">调拨出库</div><div class="d">跨仓调拨</div></div>
+        </div></div>
+      </section>
+      <!-- 单据列表 -->
+      <section class="page" id="page-docs">
+        <div class="page-head"><div><h2>单据列表</h2><p>采购入库单 · 审核 / 反审核流转</p></div><button class="btn btn-ghost btn-sm" onclick="loadOrders()">刷新</button></div>
+        <div class="panel glass">
+          <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:18px;">
+            <button class="btn btn-ghost btn-sm" onclick="filterDocs('all')">全部</button>
+            <button class="btn btn-ghost btn-sm" onclick="filterDocs('pending_audit')">待审核</button>
+            <button class="btn btn-ghost btn-sm" onclick="filterDocs('audited')">已审核</button>
+            <button class="btn btn-ghost btn-sm" onclick="filterDocs('returned')">已退回</button>
+          </div>
+          <div id="doc-list"><div class="empty">加载中…</div></div>
+        </div>
+      </section>
+      <!-- 设置 -->
+      <section class="page" id="page-settings">
+        <div class="page-head"><div><h2>系统设置</h2><p>主账号专属配置</p></div></div>
+        <div class="cols">
+          <div class="panel glass">
+            <div class="panel-title"><span class="dot"></span>制单与审核</div>
+            <div class="set-row"><div><div class="t">自动审核</div><div class="d">识别高置信时自动通过（初期建议关闭，人工确认）</div></div><div class="switch" id="setAutoAudit" onclick="toggleAutoAudit()"></div></div>
+            <div class="set-row"><div><div class="t">生成单据提示音</div><div class="d">采购单生成后播放提示，提醒人工审核</div></div><div class="switch on" onclick="toggleSwitch(this)"></div></div>
+            <div class="set-row"><div><div class="t">自动放行阈值</div><div class="d">字段置信度达标才允许自动放行</div></div><span class="tag green">≥ 95%</span></div>
+            <div class="btn-row"><button class="btn btn-primary" onclick="saveSettings()">保存设置</button></div>
+          </div>
+          <div class="panel glass">
+            <div class="panel-title"><span class="dot"></span>ERP / WMS 对接</div>
+            <div class="set-row"><div><div class="t">管家婆网店ERP</div><div class="d">NGP 开放平台（Appkey 配置后连通）</div></div><span class="tag" id="erpState">未配置</span></div>
+            <div class="set-row"><div><div class="t">云仓同步</div><div class="d">仓库列表从 ERP 接口自动同步</div></div><button class="btn btn-ghost btn-sm" onclick="syncErp()">立即同步</button></div>
+            <div class="set-row"><div><div class="t">子账号管理</div><div class="d">部门账号 · 权限：改 / 审 / 看（M1）</div></div><button class="btn btn-ghost btn-sm" onclick="toast('子账号管理将在 M1 上线')">管理</button></div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ============ 配置 & 状态 ============
+var API = 'http://127.0.0.1:8010';
+var token = localStorage.getItem('zd_token') || '';
+var me = null;
+var suppliers = [], products = [], warehouses = [], orders = [];
+var currentOcr = null, currentOcrPreviewUrl = '';
+var curFilter = 'all';
+var pages = ['home','purchase','return','out','docs','settings'];
+
+// 兼容后端 {code,message,data} 包裹 / 平铺 两种返回
+function unwrap(res){ return (res && typeof res==='object' && 'code' in res && 'data' in res) ? res.data : res; }
+async function api(path, opts){
+  opts = opts || {};
+  opts.headers = Object.assign({ 'Authorization':'Bearer '+token }, opts.headers||{});
+  var resp = await fetch(API+path, opts);
+  if(resp.status===401){ logout(); throw new Error('登录已过期'); }
+  var txt = await resp.text();
+  var data = txt ? JSON.parse(txt) : {};
+  if(!resp.ok){
+    var errData=unwrap(data)||{};
+    throw new Error(errData.detail || (data.message && data.message!=='ok' ? data.message : '') || ('请求失败 '+resp.status));
+  }
+  return unwrap(data);
+}
+function parseJwt(t){ try{ return JSON.parse(atob(t.split('.')[1])); }catch(e){ return {}; } }
+function esc(v){ var d=document.createElement('div'); d.textContent=v==null?'':String(v); return d.innerHTML; }
+
+// ============ 登录 / 退出 ============
+async function doLogin(){
+  var u=document.getElementById('loginUser').value.trim(), p=document.getElementById('loginPass').value;
+  var err=document.getElementById('loginErr'); err.textContent='';
+  try{
+    var data = await api('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p})});
+    token = data.access_token; localStorage.setItem('zd_token', token);
+    me = parseJwt(token);
+    enterApp(data);
+  }catch(e){ err.textContent = '登录失败：'+e.message; }
+}
+function enterApp(data){
+  document.getElementById('loginMask').style.display='none';
+  document.getElementById('appRoot').style.display='flex';
+  var name = (data.role==='admin'?'主账号':data.role) ;
+  document.getElementById('welcomeName').textContent = '欢迎，'+(me.sub?('用户'+me.sub):'')+'（'+name+'）';
+  document.getElementById('avatarText').textContent = (document.getElementById('loginUser').value[0]||'U').toUpperCase();
+  bootstrap();
+}
+function logout(){ localStorage.removeItem('zd_token'); token=''; location.reload(); }
+
+// ============ 路由 ============
+function go(p){
+  pages.forEach(function(pg){ document.getElementById('page-'+pg).classList.toggle('active', pg===p); });
+  document.querySelectorAll('.rail-item[data-page]').forEach(function(el){ el.classList.toggle('active', el.dataset.page===p); });
+  document.querySelector('.content').scrollTop=0;
+  if(p==='home') loadDashboard();
+  if(p==='docs') loadOrders();
+  if(p==='purchase'){ ensureMaster(); renderPurchaseBoard(); }
+  if(p==='settings') loadSettings();
+}
+document.querySelectorAll('.rail-item[data-page]').forEach(function(el){ el.addEventListener('click',function(){ go(el.dataset.page); }); });
+
+// ============ 主数据 ============
+async function ensureMaster(){
+  if(suppliers.length) return;
+  try{
+    var s = await api('/api/master/suppliers');
+    var p = await api('/api/master/products');
+    var w = await api('/api/master/warehouses');
+    suppliers=s||[]; products=p||[]; warehouses=w||[];
+    fillSelect('mSupplier', suppliers, 'name');
+    fillSelect('mWarehouse', warehouses, 'name');
+    document.getElementById('manualRows').innerHTML=''; addRow();
+  }catch(e){ toast('主数据加载失败：'+e.message); }
+}
+function fillSelect(id, list, label){
+  document.getElementById(id).innerHTML = list.map(function(x){ return '<option value="'+x.id+'">'+x[label]+'</option>'; }).join('');
+}
+function addRow(){
+  var opts = products.map(function(x){ return '<option value="'+x.id+'">'+x.name+'（'+x.sku+'）</option>'; }).join('');
+  var tr=document.createElement('tr');
+  tr.innerHTML =
+    '<td><select class="row-product" onchange="onProductPick(this)">'+opts+'</select></td>'+
+    '<td class="row-sku"></td><td><input class="row-qty" type="number" min="0" placeholder="数量"></td>'+
+    '<td class="row-unit"></td><td><button class="btn btn-danger btn-sm" onclick="removeRow(this)">删</button></td>';
+  document.getElementById('manualRows').appendChild(tr);
+  onProductPick(tr.querySelector('.row-product'));
+}
+function removeRow(btn){ var tr=btn.closest('tr'); if(tr) tr.remove(); }
+function onProductPick(sel){
+  var p = products.find(function(x){return x.id===parseInt(sel.value);}); if(!p) return;
+  var tr=sel.closest('tr');
+  tr.querySelector('.row-sku').textContent=p.sku||'';
+  tr.querySelector('.row-unit').textContent=p.unit||'';
+}
+
+// ============ 手动制单 ============
+async function submitManual(){
+  var supplierId=parseInt(document.getElementById('mSupplier').value)||null;
+  var warehouseId=parseInt(document.getElementById('mWarehouse').value)||null;
+  var rows=[].slice.call(document.querySelectorAll('#manualRows tr'));
+  var items=[];
+  for(var i=0;i<rows.length;i++){
+    var p=products.find(function(x){return x.id===parseInt(rows[i].querySelector('.row-product').value);});
+    var qty=parseFloat(rows[i].querySelector('.row-qty').value);
+    if(!p){ toast('第'+(i+1)+'行请选择商品'); return; }
+    if(!qty||qty<=0){ toast('第'+(i+1)+'行数量需大于 0'); return; }
+    items.push({product_id:p.id, product_name:p.name, sku:p.sku, qty:qty, unit:p.unit});
+  }
+  if(!items.length){ toast('请至少添加一行商品'); return; }
+  try{
+    var order = await api('/api/purchase/orders',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({source:'manual',supplier_id:supplierId,warehouse_id:warehouseId,items:items})});
+    ding(); toast('已生成采购入库单 '+(order.order_no||'')+'（待审核）');
+    document.querySelectorAll('#manualRows .row-qty').forEach(function(i){i.value='';});
+    go('docs');
+  }catch(e){ toast('制单失败：'+e.message); }
+}
+
+// ============ 入库方式切换 ============
+function showMode(m){
+  document.getElementById('mode-img').style.display = m==='img' ? '' : 'none';
+  document.getElementById('mode-manual').style.display = m==='manual' ? '' : 'none';
+  document.querySelectorAll('.mode-card').forEach(function(c){
+    c.classList.toggle('selected', c.dataset.mode===m);
+  });
+  if(m==='manual') ensureMaster();
+}
+function uploadZoneInner(){
+  return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 16V4"/><path d="m6 10 6-6 6 6"/><path d="M4 20h16"/></svg>'+
+    '<div class="t">点击选择采购单据图片</div><div class="d">支持 JPG / PNG / 拍照件 · 上传成功后进入 AI 识别队列</div>';
+}
+function resetUpload(){
+  var zone=document.getElementById('uploadZone');
+  zone.classList.remove('upload-preview');
+  zone.innerHTML = uploadZoneInner();
+  document.getElementById('ocr-status').style.display='none';
+  document.getElementById('ocr-result').style.display='none';
+  document.getElementById('ocrFile').value='';
+  currentOcr=null;
+  if(currentOcrPreviewUrl){ URL.revokeObjectURL(currentOcrPreviewUrl); currentOcrPreviewUrl=''; }
+}
+function pickOcr(){ document.getElementById('ocrFile').click(); }
+// ============ 图片识别制单 ============
+async function uploadOcr(ev){
+  var f=ev.target.files[0]; if(!f) return;
+  await ensureMaster();
+  var zone=document.getElementById('uploadZone');
+  var box=document.getElementById('ocr-status'); box.style.display='block'; box.textContent='正在上传并识别，请稍候…';
+  document.getElementById('ocr-result').style.display='none';
+  currentOcr=null;
+  if(currentOcrPreviewUrl) URL.revokeObjectURL(currentOcrPreviewUrl);
+  var localUrl=URL.createObjectURL(f);
+  currentOcrPreviewUrl=localUrl;
+  zone.classList.add('upload-preview');
+  zone.innerHTML =
+    '<img src="'+localUrl+'" alt="单据预览">'+
+    '<div style="margin-top:12px;font-size:13.5px;font-weight:600;">'+f.name+'</div>'+
+    '<div class="d" id="uploadProg" style="margin-top:6px;">大小 '+(f.size/1024).toFixed(0)+' KB · 正在上传…</div>'+
+    '<div style="margin-top:10px;display:flex;gap:10px;justify-content:center;">'+
+      '<span class="btn btn-ghost btn-sm" style="display:inline-block;" onclick="event.stopPropagation();pickOcr();">重新上传</span>'+
+      '<span class="btn btn-danger btn-sm" style="display:inline-block;" onclick="event.stopPropagation();resetUpload();">删除图片</span></div>';
+  var fd=new FormData(); fd.append('file', f);
+  try{
+    var r = await api('/api/ocr/upload',{method:'POST',body:fd});
+    var prog=document.getElementById('uploadProg');
+    if(prog) prog.textContent='已上传 · 记录编号 #'+r.ocr_record_id;
+    box.textContent=r.message||'图片已上传';
+    if(r.action==='recognized' && r.recognized){
+      currentOcr=r;
+      renderOcrDraft(r.recognized);
+      toast('识别完成，请核对黄色标记');
+    }else{
+      document.getElementById('ocr-result').style.display='none';
+      toast(r.action==='needs_configuration'?'图片已保存，尚未配置 AI':'图片已保存，识别未完成');
+    }
+  }catch(e){
+    var prog2=document.getElementById('uploadProg');
+    if(prog2) prog2.textContent='上传失败：'+e.message;
+    box.textContent='上传失败：'+e.message;
+  }
+  ev.target.value='';
+}
+
+function productOptions(selectedId, rawName){
+  var head='<option value="">待确认｜'+esc(rawName||'请选择商品')+'</option>';
+  return head+products.map(function(p){
+    return '<option value="'+p.id+'" '+(p.id===parseInt(selectedId)?'selected':'')+'>'+esc(p.name)+'（'+esc(p.sku||'')+'）</option>';
+  }).join('');
+}
+function renderOcrDraft(draft){
+  var supplier=document.getElementById('ocrSupplier');
+  supplier.innerHTML='<option value="">请选择供应商</option>'+suppliers.map(function(s){
+    return '<option value="'+s.id+'" '+(s.id===parseInt((draft.supplier||{}).supplier_id)?'selected':'')+'>'+esc(s.name)+'</option>';
+  }).join('');
+  supplier.closest('.field').classList.toggle('low-confidence', !!(draft.supplier||{}).needs_review);
+  var warehouse=document.getElementById('ocrWarehouse');
+  warehouse.innerHTML='<option value="">暂不指定</option>'+warehouses.map(function(w){
+    return '<option value="'+w.id+'" '+(w.id===parseInt((draft.warehouse||{}).warehouse_id)?'selected':'')+'>'+esc(w.name)+'</option>';
+  }).join('');
+  warehouse.closest('.field').classList.toggle('low-confidence', !!(draft.warehouse||{}).needs_review);
+  var pct=Math.round((draft.overall_confidence||0)*100);
+  document.getElementById('ocr-summary').innerHTML=
+    '<span class="confidence '+(pct<95?'low':'')+'">整体置信度 '+pct+'%</span>'+
+    '<span>黄色行需要人工确认'+(draft.document_date?' · 单据日期 '+esc(draft.document_date):'')+'</span>';
+  var body=document.getElementById('ocrRows'); body.innerHTML='';
+  (draft.items||[]).forEach(function(row){ addOcrRow(row); });
+  if(!(draft.items||[]).length) addOcrRow();
+  document.getElementById('ocr-result').style.display='block';
+}
+function addOcrRow(row){
+  row=row||{};
+  var tr=document.createElement('tr');
+  tr.className='ocr-row'+(row.needs_review!==false?' low-confidence':'');
+  tr.innerHTML='<td><select class="ocr-product" onchange="onOcrProductPick(this)">'+productOptions(row.product_id,row.raw_name||row.product_name)+'</select>'+
+    ((row.raw_name||row.raw_sku)?'<div class="raw-note">原图：'+esc(row.raw_name||row.raw_sku)+'</div>':'')+'</td>'+
+    '<td class="ocr-sku">'+esc(row.sku||'')+'</td><td><input class="ocr-qty" type="number" min="0" step="0.01" value="'+esc(row.qty==null?'':row.qty)+'" placeholder="数量"></td>'+
+    '<td class="ocr-unit">'+esc(row.unit||'')+'</td><td><button class="btn btn-danger btn-sm" onclick="removeOcrRow(this)">删</button></td>';
+  document.getElementById('ocrRows').appendChild(tr);
+  if(row.product_id) onOcrProductPick(tr.querySelector('.ocr-product'), true);
+}
+function removeOcrRow(btn){ var tr=btn.closest('tr'); if(tr) tr.remove(); }
+function onOcrProductPick(sel, keepWarning){
+  var p=products.find(function(x){return x.id===parseInt(sel.value);});
+  var tr=sel.closest('tr');
+  tr.querySelector('.ocr-sku').textContent=p?(p.sku||''):'';
+  tr.querySelector('.ocr-unit').textContent=p?(p.unit||''):'';
+  if(!keepWarning) tr.classList.toggle('low-confidence', !p);
+}
+async function submitOcr(){
+  if(!currentOcr) return;
+  var supplierId=parseInt(document.getElementById('ocrSupplier').value)||null;
+  var warehouseId=parseInt(document.getElementById('ocrWarehouse').value)||null;
+  if(!supplierId){ toast('请选择供应商'); return; }
+  var rows=[].slice.call(document.querySelectorAll('#ocrRows tr')), items=[];
+  for(var i=0;i<rows.length;i++){
+    var p=products.find(function(x){return x.id===parseInt(rows[i].querySelector('.ocr-product').value);});
+    var qty=parseFloat(rows[i].querySelector('.ocr-qty').value);
+    if(!p){ toast('第'+(i+1)+'行请选择商品'); return; }
+    if(!qty||qty<=0){ toast('第'+(i+1)+'行数量需大于 0'); return; }
+    items.push({product_id:p.id,product_name:p.name,sku:p.sku,qty:qty,unit:p.unit});
+  }
+  if(!items.length){ toast('请至少保留一行商品'); return; }
+  var btn=document.getElementById('ocrSubmit'); btn.disabled=true; btn.textContent='正在生成…';
+  try{
+    var result=await api('/api/ocr/'+currentOcr.ocr_record_id+'/commit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({supplier_id:supplierId,warehouse_id:warehouseId,items:items})});
+    ding();
+    toast('已生成 '+result.order.order_no+(result.auto_audited?'（已自动审核）':'（待审核）'));
+    resetUpload(); go('docs');
+  }catch(e){ toast('生成失败：'+e.message); }
+  finally{ btn.disabled=false; btn.textContent='核对无误，生成采购入库单'; }
+}
+
+// ============ 单据列表 & 工作台 ============
+async function loadOrders(){
+  var el=document.getElementById('doc-list'); el.innerHTML='<div class="empty">加载中…</div>';
+  try{ orders = await api('/api/purchase/orders') || []; renderDocs(); }
+  catch(e){ el.innerHTML='<div class="empty">加载失败：'+e.message+'</div>'; }
+}
+function supName(id){ var s=suppliers.find(function(x){return x.id===id;}); return s?s.name:'未指定供应商'; }
+function whName(id){ var w=warehouses.find(function(x){return x.id===id;}); return w?w.name:''; }
+var STATUS={pending_audit:'待审核',audited:'已审核',returned:'已退回'};
+function fmtTime(t){ return t? t.replace('T',' ').slice(0,16):''; }
+function orderCard(d, withAction){
+  var act='';
+  if(d.status==='pending_audit') act='<button class="btn btn-primary btn-sm" onclick="audit('+d.id+')">审核</button>';
+  if(d.status==='audited') act='<button class="btn btn-ghost btn-sm" onclick="returnOrder('+d.id+')">反审核</button>';
+  return '<div class="doc-row"><div class="doc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 3h9l4 4v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/></svg></div>'+
+    '<div class="doc-info"><div class="t">'+d.order_no+' · '+supName(d.supplier_id)+'</div><div class="s">来源：'+(d.source==='ocr'?'图片识别':'手动')+' · '+whName(d.warehouse_id)+' · '+fmtTime(d.created_at)+'</div></div>'+
+    '<div class="doc-status st-'+d.status+'">'+(STATUS[d.status]||d.status)+'</div>'+
+    (withAction?'<div style="margin-left:10px;">'+act+'</div>':'')+'</div>';
+}
+function filterDocs(f){ curFilter=f; renderDocs(); }
+function renderDocs(){
+  var list=orders.filter(function(d){return curFilter==='all'||d.status===curFilter;});
+  var el=document.getElementById('doc-list');
+  el.innerHTML = list.length ? list.map(function(d){return orderCard(d,true);}).join('') : '<div class="empty">暂无该状态单据</div>';
+}
+async function audit(id){
+  try{ await api('/api/purchase/orders/'+id+'/audit',{method:'POST'}); toast('已审核'); ding(); loadOrders(); }
+  catch(e){ toast('审核失败：'+e.message); }
+}
+async function returnOrder(id){
+  try{ await api('/api/purchase/orders/'+id+'/return',{method:'POST'}); toast('已反审核退回'); loadOrders(); }
+  catch(e){ toast('操作失败：'+e.message); }
+}
+async function loadDashboard(){
+  try{
+    if(!suppliers.length) await ensureMaster();
+    orders = await api('/api/purchase/orders') || [];
+    var pending=orders.filter(function(d){return d.status==='pending_audit';}).length;
+    var audited=orders.filter(function(d){return d.status==='audited';}).length;
+    var today=new Date().toISOString().slice(0,10);
+    var td=orders.filter(function(d){return (d.created_at||'').slice(0,10)===today;}).length;
+    document.getElementById('statPending').innerHTML=pending+' <small>单</small>';
+    document.getElementById('statAudited').innerHTML=audited+' <small>单</small>';
+    document.getElementById('statToday').innerHTML=td+' <small>单</small>';
+    document.getElementById('statProducts').innerHTML=products.length+' <small>个</small>';
+    var rc=document.getElementById('recent-docs');
+    rc.innerHTML = orders.length ? orders.slice(0,6).map(function(d){return orderCard(d,false);}).join('') : '<div class="empty">暂无单据，去「采购入库」新建第一单</div>';
+  }catch(e){ document.getElementById('recent-docs').innerHTML='<div class="empty">加载失败：'+e.message+'</div>'; }
+}
+async function renderPurchaseBoard(){
+  try{
+    if(!suppliers.length) await ensureMaster();
+    orders = await api('/api/purchase/orders') || [];
+    var pending=orders.filter(function(d){return d.status==='pending_audit';}).length;
+    var audited=orders.filter(function(d){return d.status==='audited';}).length;
+    var today=new Date().toISOString().slice(0,10);
+    var td=orders.filter(function(d){return (d.created_at||'').slice(0,10)===today;}).length;
+    function set(id,v){ var el=document.getElementById(id); if(el) el.innerHTML=v; }
+    set('pbPending',pending); set('pbAudited',audited); set('pbToday',td);
+    var rc=document.getElementById('pbRecent');
+    rc.innerHTML = orders.length ? orders.slice(0,5).map(function(d){
+      return '<div class="doc-row" style="padding:9px 2px;cursor:pointer;" onclick="go(&quot;docs&quot;)">'+
+        '<div class="doc-info"><div class="t" style="font-size:12.5px;">'+d.order_no+'</div>'+
+        '<div class="s">'+supName(d.supplier_id)+' · '+fmtTime(d.created_at)+'</div></div>'+
+        '<div class="doc-status st-'+d.status+'">'+(STATUS[d.status]||d.status)+'</div></div>';
+    }).join('') : '<div class="empty">暂无采购单</div>';
+  }catch(e){ var rc2=document.getElementById('pbRecent'); if(rc2) rc2.innerHTML='<div class="empty">加载失败</div>'; }
+}
+
+// ============ 设置 ============
+async function loadSettings(){
+  try{
+    var s=await api('/api/settings');
+    document.getElementById('setAutoAudit').classList.toggle('on', !!s.auto_audit_enabled);
+    document.getElementById('erpState').textContent = s.erp_configured?'已配置':'未配置';
+    document.getElementById('erpState').className = 'tag '+(s.erp_configured?'green':'');
+  }catch(e){ toast('设置加载失败：'+e.message); }
+}
+function toggleAutoAudit(){ document.getElementById('setAutoAudit').classList.toggle('on'); }
+async function saveSettings(){
+  var on=document.getElementById('setAutoAudit').classList.contains('on');
+  try{ await api('/api/settings',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({auto_audit_enabled:on})}); toast('设置已保存'); }
+  catch(e){ toast('保存失败：'+e.message); }
+}
+async function syncErp(){
+  try{ var r=await api('/api/sync/erp',{method:'POST'}); toast(r.note||'同步任务已触发'); }catch(e){ toast('同步失败：'+e.message); }
+}
+
+// ============ 通用 ============
+function toggleSwitch(el){ el.classList.toggle('on'); }
+var toastTimer;
+function toast(msg){ var t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer=setTimeout(function(){t.classList.remove('show');},2600); }
+// 生成单据提示音（WebAudio，无需音频文件）
+function ding(){
+  try{
+    var Ctx=window.AudioContext||window.webkitAudioContext; var ac=new Ctx();
+    var o=ac.createOscillator(), g=ac.createGain();
+    o.connect(g); g.connect(ac.destination); o.frequency.value=880; o.type='sine';
+    g.gain.setValueAtTime(0.001,ac.currentTime); g.gain.exponentialRampToValueAtTime(0.25,ac.currentTime+0.02);
+    g.gain.exponentialRampToValueAtTime(0.001,ac.currentTime+0.5);
+    o.start(); o.stop(ac.currentTime+0.55);
+  }catch(e){}
+}
+
+// ============ 启动 ============
+async function bootstrap(){
+  await ensureMaster();
+  loadDashboard();
+}
+if(token){
+  me=parseJwt(token);
+  document.getElementById('loginMask').style.display='none';
+  document.getElementById('appRoot').style.display='flex';
+  document.getElementById('welcomeName').textContent='欢迎回来（'+(me.role||'')+'）';
+  document.getElementById('avatarText').textContent=(me.role||'U')[0].toUpperCase();
+  bootstrap();
+}
+</script>
+</body>
+</html>

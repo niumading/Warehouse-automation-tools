@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>智仓 · 制单工作台</title>
+  <link rel="stylesheet" href="./theme.css?v=2026091702">
+  <link rel="stylesheet" href="./workspace.css?v=2026091702">
+  <script src="./app.js?v=2026091702" type="module"></script>
+</head>
+<body>
+<div class="stage" id="stage">
+  <header>
+    <div class="actions">
+      <button class="theme-toggle" data-action="settings" aria-label="打开设置" title="工作台与 API 设置"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8.25A3.75 3.75 0 1 0 12 15.75 3.75 3.75 0 0 0 12 8.25Z"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.86 2.86-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6 1.7 1.7 0 0 0-.4 1.1V21h-4v-.1A1.7 1.7 0 0 0 8.6 19.4a1.7 1.7 0 0 0-1.88.34l-.06.06-2.86-2.86.06-.06A1.7 1.7 0 0 0 4.2 15a1.7 1.7 0 0 0-.6-1 1.7 1.7 0 0 0-1.1-.4H2.4v-4h.1A1.7 1.7 0 0 0 4.2 8.6a1.7 1.7 0 0 0-.34-1.88l-.06-.06L6.66 3.8l.06.06A1.7 1.7 0 0 0 8.6 4.2a1.7 1.7 0 0 0 1-.6 1.7 1.7 0 0 0 .4-1.1v-.1h4v.1A1.7 1.7 0 0 0 15 4.2a1.7 1.7 0 0 0 1.88-.34l.06-.06 2.86 2.86-.06.06A1.7 1.7 0 0 0 19.4 8.6a1.7 1.7 0 0 0 .6 1 1.7 1.7 0 0 0 1.1.4h.1v4h-.1a1.7 1.7 0 0 0-1.7 1Z"/></svg></button>
+      <button class="theme-toggle" id="themeToggle" aria-label="切换深浅色" title="切换深浅色"><svg class="moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.2 15.2A8.4 8.4 0 0 1 8.8 3.8 8.5 8.5 0 1 0 20.2 15.2Z"/></svg><svg class="sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.4"/><path d="M12 2v2.1M12 19.9V22M4.93 4.93l1.49 1.49M17.58 17.58l1.49 1.49M2 12h2.1M19.9 12H22M4.93 19.07l1.49-1.49M17.58 6.42l1.49-1.49"/></svg></button>
+      <span id="accountName" class="account-name">未登录</span>
+      <button class="btn-ghost" id="accountAction" data-action="account">登录</button>
+    </div>
+  </header>
+  <div class="float sticky" data-depth="8">
+    <div class="memo-head"><b>备忘录</b><small>MEMO</small></div>
+    <p class="memo-body" id="memoText" contenteditable="false" role="textbox" aria-label="工作备忘录" spellcheck="false">核对供应商与商品数量，确认后生成采购单。</p>
+    <small class="memo-hint">仅保存在本机浏览器</small>
+  </div>
+  <button class="float glass deadlines dashboard-card" id="card-inbound" data-action="purchase" data-depth="10">
+    <span class="card-head">↓ 采购入库 <small>INBOUND</small></span>
+    <span class="inner-card deadline-item"><b>从一张送货单开始</b><small>图片识别 · 手动制单</small><span class="pill">新建采购单 ↗</span></span>
+  </button>
+  <button class="float glass sprints dashboard-card" data-action="orders" data-depth="8">
+    <span class="card-head">☷ 单据中心 <small>DOCUMENTS</small></span>
+    <span class="dashboard-counts"><span><b id="pendingCount">—</b><small>待审核</small></span><span><b id="auditedCount">—</b><small>已审核</small></span><span><b id="todayCount">—</b><small>今日新建</small></span></span>
+    <span class="card-caption" id="dashboardStatus">登录后查看真实单据</span>
+  </button>
+  <div class="float glass sync" data-depth="6">
+    <span class="card-head">更多业务 <small>COMING NEXT</small></span>
+    <div class="future-actions"><button data-action="outbound">↗ 其他出库<span>拍照制单</span></button><button data-action="returns">↶ 退货入库<span>智能导入</span></button><button data-action="subcontract-inbound">↓ 委外入库<span>拍照制单</span></button><button data-action="subcontract-outbound">↑ 委外出库<span>拍照制单</span></button></div>
+  </div>
+  <main class="hero">
+    <button class="hero-tile" type="button" data-action="home" aria-label="点击水泡收起工作区" title="移动鼠标拨动水泡，点击变形并收起工作区"><span class="bubble-interaction" aria-hidden="true"><span class="hero-bubble"><span class="bubble-film"></span><span class="bubble-rim"></span><span class="bubble-glint"></span><span class="bubble-pearl"></span></span></span></button>
+    <h1>让每一张单据<br><span>轻松流转</span></h1>
+    <p class="sub">上传、核对、审核。把重复的制单工作交给智仓。</p>
+    <button class="btn-primary start-work" id="startWorkBtn" data-action="reveal-home" aria-expanded="false">开始工作 <span aria-hidden="true">↗</span></button>
+    <div class="chips"><button class="chip" data-action="purchase"><i></i>采购入库</button><button class="chip" data-action="orders"><i></i>单据中心</button></div>
+    <div class="compact-business-actions" aria-label="窄屏业务入口"><button data-action="outbound">其他出库<span>拍照制单</span></button><button data-action="returns">退货入库<span>智能导入</span></button><button data-action="subcontract-inbound">委外入库<span>拍照制单</span></button><button data-action="subcontract-outbound">委外出库<span>拍照制单</span></button></div>
+    <p class="home-note">采购单生成后，按设置进入人工或自动审核</p>
+  </main>
+</div>
+
+<dialog id="loginDialog" class="app-dialog login-dialog" aria-labelledby="loginTitle">
+  <form id="loginForm">
+    <div class="dialog-heading"><div><span class="eyebrow">WELCOME BACK</span><h2 id="loginTitle">登录智仓</h2></div><button type="button" class="close-btn" data-action="close" aria-label="关闭">×</button></div>
+    <p class="muted">使用现有账号，继续你的制单工作。</p>
+    <label class="field">账号<input id="loginUser" name="username" autocomplete="username" required maxlength="100" placeholder="请输入账号"></label>
+    <label class="field">密码<input id="loginPass" name="password" type="password" autocomplete="current-password" required placeholder="请输入密码"></label>
+    <p id="loginError" class="error-text" role="alert"></p>
+    <button class="btn-block" id="loginSubmit" type="submit">登录工作台</button>
+  </form>
+</dialog>
+
+<dialog id="purchaseDialog" class="app-dialog purchase-dialog" aria-labelledby="purchaseTitle">
+  <div class="dialog-heading"><div><span class="eyebrow">PURCHASE INBOUND</span><h2 id="purchaseTitle">新建采购入库单</h2></div><button class="close-btn" data-action="close" aria-label="关闭">×</button></div>
+  <div class="seg" id="purchaseModes"><button type="button" data-action="mode-image" id="modeImage" aria-pressed="false">▧ 图片识别</button><button type="button" data-action="mode-manual" id="modeManual" class="active" aria-pressed="true">＋ 手动制单</button></div>
+  <section id="uploadSection" hidden>
+    <div id="imageDrop" class="image-drop"><label for="fileInput" class="upload-label"><b>点击或拖拽送货单图片</b><span>JPG / PNG / WebP · 最大 10 MB</span><input id="fileInput" type="file" accept="image/jpeg,image/png,image/webp"></label></div>
+    <div id="imagePreview" class="image-preview" hidden><div class="preview-frame"><img id="previewImg" alt="送货单预览"></div><div><p id="imageFilename"></p><p id="imageRotationStatus" class="rotation-status">方向：原图</p><p id="imageStatus" aria-live="polite"></p><div class="image-actions"><button type="button" class="btn-secondary" data-action="rotate-left" aria-label="图片向左旋转90度">↶ 左转 90°</button><button type="button" class="btn-secondary" data-action="rotate-right" aria-label="图片向右旋转90度">↷ 右转 90°</button><button type="button" class="btn-secondary" data-action="clear-image">清除本次选择</button><button id="cancelRecognizeBtn" type="button" class="btn-secondary danger-soft" data-action="cancel-recognition" hidden>取消等待</button></div></div></div>
+    <p class="hint">如果文字是横着或倒着的，请先旋转到正向再识别；系统会把旋转后的图片发送至模型服务。</p>
+    <button id="recognizeBtn" class="btn-secondary" type="button" data-action="recognize" disabled>开始识别</button>
+  </section>
+  <p id="purchaseFeedback" class="feedback" role="status"></p>
+  <form id="purchaseForm">
+    <div class="form-grid purchase-fields">
+      <label class="field">供应商<select id="supplierSelect" required><option value="">请选择供应商</option></select></label>
+      <label class="field">入库仓库<select id="warehouseSelect" required><option value="">请选择仓库</option></select></label>
+    </div>
+    <p id="confidenceNote" class="hint" hidden></p>
+    <div class="table-wrap"><table class="item-table"><thead><tr><th>商品 / SKU</th><th>数量</th><th>单位</th><th>单价（选填）</th><th><span class="sr-only">操作</span></th></tr></thead><tbody id="itemRows"></tbody></table></div>
+    <button class="add-item" type="button" data-action="add-item">＋ 添加商品</button>
+    <div class="form-footer"><span class="muted" id="purchaseFootnote">生成后进入待审核，审核不会执行仓库上架。</span><button class="btn-primary" id="purchaseSubmit" type="submit">生成采购单</button></div>
+  </form>
+</dialog>
+
+<dialog id="outboundDialog" class="app-dialog outbound-dialog" aria-labelledby="outboundTitle">
+  <div class="dialog-heading"><div><span class="eyebrow">OTHER OUTBOUND</span><h2 id="outboundTitle">拍照创建其他出库单</h2></div><button class="close-btn" data-action="close" aria-label="关闭">×</button></div>
+  <section>
+    <div id="outboundImageDrop" class="image-drop"><label for="outboundFileInput" class="upload-label"><b>点击或拖拽其他出库单图片</b><span>JPG / PNG / WebP · 最大 10 MB</span><input id="outboundFileInput" type="file" accept="image/jpeg,image/png,image/webp"></label></div>
+    <div id="outboundImagePreview" class="image-preview" hidden><div class="preview-frame"><img id="outboundPreviewImg" alt="其他出库单预览"></div><div><p id="outboundImageFilename"></p><p id="outboundRotationStatus" class="rotation-status">方向：原图</p><p id="outboundImageStatus" aria-live="polite"></p><div class="image-actions"><button type="button" class="btn-secondary" data-action="outbound-rotate-left">↶ 左转 90°</button><button type="button" class="btn-secondary" data-action="outbound-rotate-right">↷ 右转 90°</button><button type="button" class="btn-secondary" data-action="outbound-clear-image">清除本次选择</button><button id="outboundCancelRecognize" type="button" class="btn-secondary danger-soft" data-action="outbound-cancel-recognition" hidden>取消等待</button></div></div></div>
+    <p class="hint">请先把图片旋转到文字正向。系统识别后生成可编辑草稿，不会直接扣减库存。</p>
+    <button id="outboundRecognizeBtn" class="btn-secondary" type="button" data-action="outbound-recognize" disabled>开始识别</button>
+  </section>
+  <p id="outboundFeedback" class="feedback" role="status"></p>
+  <form id="outboundForm">
+    <div class="form-grid outbound-fields">
+      <label class="field">出库类型<select id="outboundType" required><option value="requisition">领用出库</option><option value="scrap">报废出库</option><option value="transfer">调拨出库</option><option value="other">其他出库</option></select></label>
+      <label class="field">出库仓库<select id="outboundWarehouse" required><option value="">请选择出库仓库</option></select></label>
+      <label class="field">调入仓库（调拨时必填）<select id="outboundDestination"><option value="">非调拨可不选</option></select></label>
+      <label class="field">领用部门<input id="outboundDepartment" maxlength="200" placeholder="识别后可修改"></label>
+      <label class="field">领用人 / 经手人<input id="outboundRecipient" maxlength="200" placeholder="识别后可修改"></label>
+      <label class="field">整单备注<input id="outboundRemark" maxlength="1000" placeholder="选填"></label>
+    </div>
+    <p id="outboundConfidence" class="hint" hidden></p>
+    <div class="table-wrap"><table class="item-table outbound-item-table"><thead><tr><th>商品 / SKU</th><th>出库数量</th><th>单位</th><th>行备注</th><th><span class="sr-only">操作</span></th></tr></thead><tbody id="outboundItemRows"></tbody></table></div>
+    <button class="add-item" type="button" data-action="add-outbound-item">＋ 添加商品</button>
+    <div class="form-footer"><span class="muted">确认后生成待审核出库单；当前版本不会自动扣减库存或推送 ERP。</span><button class="btn-primary" id="outboundSubmit" type="submit" disabled>生成出库单</button></div>
+  </form>
+  <div class="settings-divider"></div><h3 class="settings-subtitle">最近其他出库单</h3>
+  <div class="table-wrap"><table class="outbound-orders-table"><thead><tr><th>出库单号</th><th>类型</th><th>仓库</th><th>部门 / 经手人</th><th>状态</th><th>创建时间</th></tr></thead><tbody id="outboundOrderRows"></tbody></table></div>
+  <p id="outboundOrderTotal" class="muted list-count"></p>
+</dialog>
+
+<dialog id="subcontractDialog" class="app-dialog outbound-dialog" aria-labelledby="subcontractTitle">
+  <div class="dialog-heading"><div><span class="eyebrow" id="subcontractEyebrow">SUBCONTRACT INBOUND</span><h2 id="subcontractTitle">手动创建委外入库单</h2></div><button class="close-btn" data-action="close" aria-label="关闭">×</button></div>
+  <div class="seg" id="subcontractModes"><button type="button" data-action="subcontract-mode-image" id="subcontractModeImage" aria-pressed="false">▧ 图片识别</button><button type="button" data-action="subcontract-mode-manual" id="subcontractModeManual" class="active" aria-pressed="true">＋ 手动制单</button></div>
+  <p id="subcontractModeHint" class="hint">手动选择加工商、仓库和商品数量，无需上传图片。</p>
+  <section id="subcontractImageMode" hidden>
+    <div id="subcontractImageDrop" class="image-drop"><label for="subcontractFileInput" class="upload-label"><b id="subcontractUploadTitle">点击或拖拽委外入库单图片</b><span>JPG / PNG / WebP · 最大 10 MB</span><input id="subcontractFileInput" type="file" accept="image/jpeg,image/png,image/webp"></label></div>
+    <div id="subcontractImagePreview" class="image-preview" hidden><div class="preview-frame"><img id="subcontractPreviewImg" alt="委外单预览"></div><div><p id="subcontractImageFilename"></p><p id="subcontractRotationStatus" class="rotation-status">方向：原图</p><p id="subcontractImageStatus" aria-live="polite"></p><div class="image-actions"><button type="button" class="btn-secondary" data-action="subcontract-rotate-left">↶ 左转 90°</button><button type="button" class="btn-secondary" data-action="subcontract-rotate-right">↷ 右转 90°</button><button type="button" class="btn-secondary" data-action="subcontract-clear-image">清除本次选择</button><button id="subcontractCancelRecognize" type="button" class="btn-secondary danger-soft" data-action="subcontract-cancel-recognition" hidden>取消等待</button></div></div></div>
+    <p class="hint">系统只识别商品和数量；加工商与仓库由您手动选择，确认前可修改识别结果。</p>
+    <button id="subcontractRecognizeBtn" class="btn-secondary" type="button" data-action="subcontract-recognize" disabled>开始识别</button>
+  </section>
+  <p id="subcontractFeedback" class="feedback" role="status"></p>
+  <form id="subcontractForm">
+    <div class="form-grid purchase-fields">
+      <label class="field">加工商 / 供应商<select id="subcontractSupplier" required><option value="">请选择加工商</option></select></label>
+      <label class="field"><span id="subcontractWarehouseLabel">入库仓库</span><select id="subcontractWarehouse" required><option value="">请选择仓库</option></select></label>
+      <label class="field">整单备注<input id="subcontractRemark" maxlength="1000" placeholder="选填"></label>
+    </div>
+    <p id="subcontractConfidence" class="hint" hidden></p>
+    <div class="table-wrap"><table class="item-table outbound-item-table"><thead><tr><th>商品 / SKU</th><th id="subcontractQtyLabel">入库数量</th><th>单位</th><th>行备注</th><th><span class="sr-only">操作</span></th></tr></thead><tbody id="subcontractItemRows"></tbody></table></div>
+    <button class="add-item" type="button" data-action="add-subcontract-item">＋ 添加商品</button>
+    <div class="form-footer"><span class="muted" id="subcontractFootnote">确认后生成待审核委外入库单；暂不自动推送 ERP 或变更库存。</span><button id="subcontractCancelEdit" type="button" class="btn-secondary" data-action="subcontract-cancel-edit" hidden>取消修改</button><button class="btn-primary" id="subcontractSubmit" type="submit" disabled>生成委外入库单</button></div>
+  </form>
+  <div class="settings-divider"></div><h3 class="settings-subtitle" id="subcontractRecentTitle">最近委外入库单</h3>
+  <div class="table-wrap"><table class="outbound-orders-table"><thead><tr><th>委外单号</th><th>方向</th><th>加工商</th><th>仓库</th><th>状态</th><th>创建时间</th></tr></thead><tbody id="subcontractOrderRows"></tbody></table></div>
+  <p id="subcontractOrderTotal" class="muted list-count"></p>
+</dialog>
+
+<dialog id="ordersDialog" class="app-dialog orders-dialog" aria-labelledby="ordersTitle">
+  <div class="dialog-heading"><div><span class="eyebrow">DOCUMENT CENTER</span><h2 id="ordersTitle">单据中心</h2></div><button class="close-btn" data-action="close" aria-label="关闭">×</button></div>
+  <div class="orders-toolbar"><div class="seg" id="orderFilters"><button data-filter="all" class="active" aria-pressed="true">全部</button><button data-filter="pending_audit" aria-pressed="false">待审核</button><button data-filter="audited" aria-pressed="false">已审核</button></div><input id="orderSearch" type="search" aria-label="搜索单号或供应商" placeholder="搜索单号 / 供应商"><button class="btn-secondary" data-action="refresh-orders">刷新</button></div>
+  <p id="ordersError" class="error-text" role="alert"></p>
+  <div class="table-wrap"><table class="orders-table"><thead><tr><th>采购单号</th><th>供应商 / 仓库</th><th>来源</th><th>状态</th><th>ERP 状态</th><th>创建时间</th><th>操作</th></tr></thead><tbody id="orderRows"></tbody></table></div>
+  <div class="list-footer"><span id="orderTotal" class="muted"></span><button class="btn-secondary" data-action="purchase" id="newOrderBtn">＋ 新建采购单</button></div>
+</dialog>
+
+<dialog id="subcontractDetailDialog" class="app-dialog detail-dialog" aria-labelledby="subcontractDetailTitle">
+  <div class="dialog-heading"><div><span class="eyebrow">SUBCONTRACT DOCUMENT</span><h2 id="subcontractDetailTitle">委外单详情</h2></div><button type="button" class="close-btn" data-action="close" aria-label="关闭">×</button></div>
+  <div id="subcontractDetailContent"></div>
+  <p class="hint">审核仅确认本地单据；暂不推送 ERP、不变更库存。</p>
+  <p id="subcontractDetailError" class="error-text" role="alert"></p>
+  <div id="subcontractDetailActions" class="detail-actions"></div>
+</dialog>
+
+<dialog id="detailDialog" class="app-dialog detail-dialog" aria-labelledby="detailTitle">
+  <div class="dialog-heading"><div><span class="eyebrow">PURCHASE DOCUMENT</span><h2 id="detailTitle">采购单详情</h2></div><button class="close-btn" data-action="close" aria-label="关闭">×</button></div>
+  <div id="detailContent"></div><p id="detailError" class="error-text" role="alert"></p><div class="detail-actions" id="detailActions"></div>
+</dialog>
+
+<dialog id="settingsDialog" class="app-dialog settings-dialog" aria-labelledby="settingsTitle">
+  <form id="settingsForm"><div class="dialog-heading"><div><span class="eyebrow">PREFERENCES & API</span><h2 id="settingsTitle">工作台设置</h2></div><button type="button" class="close-btn" data-action="close" aria-label="关闭">×</button></div>
+  <div class="settings-groups">
+    <details class="settings-group" id="settingsGeneral">
+      <summary><span><b>常规与审核</b><small>自动审核开关与置信度规则</small></span></summary>
+      <div class="settings-group-body"><label class="setting-row"><span><b>自动审核</b><small>仅符合后端置信度与匹配条件的识别单据自动审核。</small></span><input id="autoAudit" type="checkbox"></label><p id="settingsSummary" class="hint"></p></div>
+    </details>
+    <details class="settings-group" id="settingsAi">
+      <summary><span><b>AI 图片识别</b><small>模型地址、视觉模型与 API Key</small></span></summary>
+      <div class="settings-group-body"><label class="field">API 地址<input id="aiBaseUrl" type="url" maxlength="500" placeholder="https://api.example.com/v1" autocomplete="url"></label>
+      <label class="field">视觉模型<input id="aiVisionModel" type="text" maxlength="200" placeholder="请输入支持图片识别的模型名称" autocomplete="off"></label>
+      <div class="field"><span>API Key</span><div class="key-field"><input id="aiApiKey" type="password" maxlength="2048" placeholder="留空则保留当前密钥" autocomplete="new-password"><button id="editApiKeyBtn" class="btn-secondary" type="button" data-action="edit-api-key">更换密钥</button></div></div>
+      <p id="apiKeyHelp" class="hint"></p><p id="aiStatus" class="api-status"></p><p class="hint">配置保存在本机项目中；页面不会回显完整密钥。保存时不会调用模型。</p></div>
+    </details>
+    <details class="settings-group" id="settingsErp">
+      <summary><span><b>ERP API 对接</b><small>旺店通企业版与管家婆 NGP</small></span></summary>
+      <div class="settings-group-body"><p id="erpHelp" class="hint">选择 ERP 类型后填写对应开放平台凭证。页面不会回显完整凭证。</p>
+      <label class="field">ERP 类型<select id="erpType"><option value="wdt_qyb">旺店通企业版</option><option value="gjp">管家婆 NGP</option></select></label>
+      <label class="field">API 地址<input id="erpBaseUrl" type="url" maxlength="500" placeholder="https://sandbox.wangdian.cn/openapi2" autocomplete="url"></label>
+      <label class="field" id="erpSidField">SID（卖家账号）<input id="erpSid" type="password" maxlength="200" placeholder="未配置" autocomplete="new-password"></label>
+      <label class="field">AppKey<input id="erpAppKey" type="password" maxlength="512" placeholder="未配置" autocomplete="new-password"></label>
+      <label class="field">AppSecret<input id="erpAppSecret" type="password" maxlength="2048" placeholder="未配置" autocomplete="new-password"></label>
+      <label class="field" id="erpTokenField" hidden>TOKEN<input id="erpToken" type="password" maxlength="4096" placeholder="未配置；过期后需在 ERP 服务市场刷新" autocomplete="new-password"></label>
+      <p id="erpStatus" class="api-status"></p><div class="settings-actions"><button id="erpSyncBtn" class="btn-secondary" type="button" data-action="sync-erp" hidden>同步主数据</button><a id="erpPortalLink" href="https://open.wangdian.cn/" target="_blank" rel="noopener noreferrer">打开旺店通官方开放平台 ↗</a></div></div>
+    </details>
+  </div>
+  <p id="settingsError" class="error-text" role="alert"></p><div class="settings-actions"><button id="settingsRetry" class="btn-secondary" type="button" data-action="retry-settings" hidden>重新加载</button><button id="settingsSubmit" class="btn-block" type="submit">保存设置</button></div></form>
+  <section id="accountSection" hidden><details class="settings-group" id="settingsAccounts"><summary><span><b>子账号管理</b><small>账号、角色与启停状态</small></span></summary><div class="settings-group-body"><p class="hint">制单员可制单并自审；审核员只负责审核；只读账号只能查看。</p>
+      <form id="accountForm" class="account-create"><input id="accountUsername" autocomplete="off" maxlength="100" required placeholder="账号名"><input id="accountPassword" type="password" autocomplete="new-password" minlength="6" maxlength="128" required placeholder="初始密码（至少6位）"><select id="accountRole" aria-label="子账号权限"><option value="operator">制单员</option><option value="auditor">审核员</option><option value="viewer">只读</option></select><button id="accountCreate" class="btn-secondary" type="submit">创建账号</button></form>
+      <p id="accountError" class="error-text" role="alert"></p><div id="accountList" class="account-list"></div></div></details>
+  </section>
+</dialog>
+
+<dialog id="returnsDialog" class="app-dialog returns-dialog" aria-labelledby="returnsTitle">
+  <div class="dialog-heading"><div><span class="eyebrow">RETURN INBOUND</span><h2 id="returnsTitle">退货运单数据</h2></div><button class="close-btn" data-action="close" aria-label="关闭">×</button></div>
+  <section class="waybill-scan-panel">
+    <h3 class="settings-subtitle">扫码生成退供应商邮件凭证</h3>
+    <div class="scan-row"><input id="waybillScanInput" type="search" maxlength="200" autocomplete="off" aria-label="扫描或输入运单号" placeholder="连续扫描运单条码，或输入运单号后按回车"><button class="btn-primary" data-action="scan-waybill">加入本次凭证</button></div>
+    <div class="batch-voucher-import"><label class="batch-voucher-button">批量导入匹配<input id="returnVoucherBatchFile" type="file" accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden></label><span id="batchVoucherStatus">上传含“运单号”列的 CSV / XLSX，最多 2000 个唯一运单号</span></div>
+    <p id="waybillScanError" class="error-text" role="alert"></p>
+    <div id="scannedWaybillBar" class="scanned-waybill-bar" hidden><div><b>本次已扫描</b><span id="scannedWaybillCount"></span></div><div id="scannedWaybillList" class="scanned-waybill-list"></div></div>
+    <div id="waybillSheet" class="waybill-sheet" hidden>
+      <div class="waybill-sheet-head"><div><span class="eyebrow">RETURN VOUCHERS</span><h3>退供应商邮件凭证</h3></div><div><small>按供应商分 Sheet</small><b id="waybillGroupCount"></b></div></div>
+      <div id="returnSheetTabs" class="return-sheet-tabs" role="tablist" aria-label="供应商工作表"></div>
+      <div id="returnVoucherSheets" class="return-voucher-sheets"></div>
+      <p id="waybillWarnings" class="return-warnings"></p>
+      <div class="return-import-actions"><span id="waybillSummary" class="muted"></span><div class="return-action-buttons"><button class="btn-secondary danger-soft" data-action="clear-scanned-waybills">清空本次扫描</button><button class="btn-secondary" data-action="print-waybill">打印凭证</button><button class="btn-secondary" data-action="export-return-vouchers" data-layout="combined_sheet">导出全部单 Sheet</button><button class="btn-primary" data-action="export-return-vouchers" data-layout="supplier_sheets">导出供应商分 Sheet</button></div></div>
+    </div>
+  </section>
+  <div class="return-database-gate"><button id="returnDatabaseToggle" type="button" class="btn-secondary" data-action="toggle-return-database" aria-expanded="false" aria-controls="returnDatabasePanel">数据库导入与查询</button><span>需要更新数据库或查询历史记录时再展开</span></div>
+  <div id="returnDatabasePanel" class="return-database-panel" hidden>
+    <div class="settings-divider"></div>
+    <section class="return-import-panel">
+      <label for="returnFile" class="return-upload"><b>上传数据库更新文件</b><span>支持 CSV / XLSX，系统自动识别表头；按“运单号 + SKU”新增或更新</span><input id="returnFile" type="file" accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"></label>
+      <p id="returnFileStatus" class="feedback" role="status">选择文件后自动预览，不会立即修改数据库。</p>
+      <div id="returnMapping" hidden>
+        <h3 class="settings-subtitle">确认字段对应关系</h3>
+        <div class="return-mapping-grid">
+          <label class="field">运单号 *<select id="mapTracking"></select></label>
+          <label class="field">SKU *<select id="mapSku"></select></label>
+          <label class="field">数量（无此列则按 1）<select id="mapQty"></select></label>
+          <label class="field">商品名称<select id="mapProductName"></select></label>
+          <label class="field">供应商编码<select id="mapSupplierCode"></select></label>
+          <label class="field">供应商名称<select id="mapSupplierName"></select></label>
+          <label class="field">退货地址<select id="mapReturnAddr"></select></label>
+        </div>
+        <p class="hint">系统会记住本次映射。以后相同表头可自动匹配；导入不会删除旧记录。</p>
+        <div class="table-wrap"><table class="return-preview-table"><thead id="returnPreviewHead"></thead><tbody id="returnPreviewRows"></tbody></table></div>
+        <div class="return-import-actions"><span id="returnPreviewTotal" class="muted"></span><div class="return-action-buttons"><button id="cancelReturnImportBtn" type="button" class="btn-secondary danger-soft" data-action="cancel-return-import" hidden>取消导入</button><button id="returnCommitBtn" type="button" class="btn-primary" data-action="commit-returns" disabled>确认导入并更新</button></div></div>
+      </div>
+      <p id="returnImportError" class="error-text" role="alert"></p>
+      <div id="returnImportResult" class="import-result" hidden></div>
+    </section>
+    <div class="settings-divider"></div>
+    <div class="orders-toolbar return-toolbar"><input id="returnSearch" type="search" aria-label="搜索退货运单" placeholder="输入运单号查询"><button class="btn-secondary" data-action="refresh-returns">刷新记录</button></div>
+    <div class="table-wrap"><table class="returns-table"><thead><tr><th>运单号</th><th>SKU / 商品</th><th>数量</th><th>供应商</th><th>退货地址</th><th>更新时间</th></tr></thead><tbody id="returnRecordRows"></tbody></table></div>
+    <p id="returnRecordTotal" class="muted list-count"></p>
+  </div>
+</dialog>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+</body>
+</html>
